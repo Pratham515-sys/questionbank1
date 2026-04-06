@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Question Bank</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --pink:   #ff6bcb;
+      --purple: #a855f7;
+      --cyan:   #22d3ee;
+      --green:  #4ade80;
+      --orange: #fb923c;
+      --yellow: #facc15;
+      --bg:     #0a0a14;
+      --card:   #13131f;
+      --border: rgba(255,255,255,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: #e2e8f0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── BACKGROUND BLOBS ── */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      top: -200px; left: -200px;
+      background: radial-gradient(circle, rgba(168,85,247,0.25), transparent 70%);
+      animation: drift1 12s ease-in-out infinite alternate;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      bottom: -150px; right: -150px;
+      background: radial-gradient(circle, rgba(34,211,238,0.2), transparent 70%);
+      animation: drift2 15s ease-in-out infinite alternate;
+    }
+    @keyframes drift1 { to { transform: translate(80px, 60px); } }
+    @keyframes drift2 { to { transform: translate(-60px, -80px); } }
+
+    /* ── HEADER ── */
+    header {
+      position: relative; z-index: 10;
+      text-align: center;
+      padding: 56px 20px 32px;
+    }
+    header .badge {
+      display: inline-block;
+      font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--cyan);
+      border: 1px solid rgba(34,211,238,0.4);
+      border-radius: 100px;
+      padding: 6px 18px;
+      margin-bottom: 20px;
+      background: rgba(34,211,238,0.07);
+    }
+    header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, var(--pink) 60%, var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      margin-top: 12px;
+      color: rgba(255,255,255,0.4);
+      font-size: 1rem;
+    }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      position: relative; z-index: 200;
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 12px;
+      padding: 0 20px 36px;
+      overflow: visible;
+    }
+    .toolbar button {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; font-weight: 500;
+      padding: 12px 26px;
+      border: none; border-radius: 14px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      transition: transform 0.18s, box-shadow 0.18s, filter 0.18s;
+      position: relative; overflow: hidden;
+    }
+    .toolbar button::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.12);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .toolbar button:hover::after { opacity: 1; }
+    .toolbar button:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .toolbar button:active { transform: translateY(0); }
+
+    .btn-load   { background: linear-gradient(135deg, var(--cyan), #38bdf8); color: #0a0a14; box-shadow: 0 4px 20px rgba(34,211,238,0.35); }
+    .btn-gen    { background: linear-gradient(135deg, var(--purple), var(--pink)); color: #fff; box-shadow: 0 4px 20px rgba(168,85,247,0.35); }
+    .btn-add    { background: linear-gradient(135deg, var(--green), #16a34a); color: #0a0a14; box-shadow: 0 4px 20px rgba(74,222,128,0.35); }
+
+    .gen-wrapper { position: relative; z-index: 200; }
+    .gen-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 8px;
+      min-width: 180px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      z-index: 100;
+      animation: slideDown 0.2s ease;
+    }
+    .gen-dropdown.open { display: block; }
+    .gen-dropdown button {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none !important;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+      transition: background 0.15s;
+      box-shadow: none;
+    }
+    .gen-dropdown button:hover { background: rgba(255,255,255,0.07); transform: none; }
+    .gen-dropdown hr { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+
+    /* ── FORMS ── */
+    .form-panel {
+      display: none;
+      position: relative; z-index: 10;
+      width: min(640px, 92%);
+      margin: 0 auto 36px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      animation: slideDown 0.3s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .form-panel h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      margin-bottom: 22px;
+      background: linear-gradient(90deg, var(--yellow), var(--orange));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+    .form-panel input,
+    .form-panel select {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .form-panel input::placeholder { color: rgba(255,255,255,0.25); }
+    .form-panel input:focus,
+    .form-panel select:focus {
+      border-color: var(--purple);
+      background: rgba(168,85,247,0.07);
+    }
+    .form-panel select option { background: #1a1a2e; }
+    .form-actions {
+      display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap;
+    }
+    .form-actions button {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; font-weight: 500;
+      padding: 11px 24px;
+      border: none; border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .form-actions button:hover { transform: translateY(-2px); }
+    .btn-save   { background: linear-gradient(135deg, var(--purple), var(--pink)); color: #fff; box-shadow: 0 4px 16px rgba(168,85,247,0.4); }
+    .btn-cancel { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); border: 1px solid var(--border) !important; }
+
+    /* ── STATS BAR ── */
+    #statsBar {
+      position: relative; z-index: 10;
+      display: none;
+      justify-content: center; gap: 16px; flex-wrap: wrap;
+      padding: 0 20px 28px;
+    }
+    .stat-chip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 0.82rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .stat-chip .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── GRID ── */
+    #output {
+      position: relative; z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 22px;
+      padding: 0 24px 60px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s, box-shadow 0.25s;
+      animation: fadeUp 0.4s ease both;
+    }
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Glow accent top-left */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 4px;
+      border-radius: 22px 22px 0 0;
+    }
+    .card.easy::before   { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+    .card.medium::before { background: linear-gradient(90deg, var(--yellow), var(--orange)); }
+    .card.hard::before   { background: linear-gradient(90deg, var(--pink), var(--purple)); }
+
+    /* diff badge */
+    .diff-badge {
+      display: inline-block;
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 100px;
+      margin-bottom: 14px;
+    }
+    .easy   .diff-badge { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+    .medium .diff-badge { background: rgba(250,204,21,0.12); color: var(--yellow); border: 1px solid rgba(250,204,21,0.3); }
+    .hard   .diff-badge { background: rgba(255,107,203,0.12); color: var(--pink); border: 1px solid rgba(255,107,203,0.3); }
+
+    .card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .opt {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .answer-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 18px;
+    }
+    .answer-label { font-size: 0.75rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px; }
+    .answer-val {
+      background: rgba(74,222,128,0.1);
+      color: var(--green);
+      border: 1px solid rgba(74,222,128,0.25);
+      border-radius: 8px;
+      padding: 4px 12px;
+      font-size: 0.82rem; font-weight: 500;
+    }
+
+    .card-actions { display: flex; gap: 8px; }
+    .card-actions button {
+      flex: 1;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem; font-weight: 500;
+      padding: 9px;
+      border: none; border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s, filter 0.15s;
+    }
+    .card-actions button:hover { transform: translateY(-2px); filter: brightness(1.15); }
+    .btn-edit   { background: rgba(251,146,60,0.15); color: var(--orange); border: 1px solid rgba(251,146,60,0.3) !important; }
+    .btn-delete { background: rgba(255,107,203,0.12); color: var(--pink); border: 1px solid rgba(255,107,203,0.28) !important; }
+
+    /* ── EMPTY STATE ── */
+    #emptyState {
+      display: none;
+      position: relative; z-index: 10;
+      text-align: center; padding: 80px 20px;
+    }
+    #emptyState .icon { font-size: 5rem; margin-bottom: 20px; }
+    #emptyState h2 { font-family: 'Syne', sans-serif; font-size: 1.6rem; color: rgba(255,255,255,0.5); }
+    #emptyState p  { color: rgba(255,255,255,0.25); margin-top: 8px; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 28px;
+      font-size: 0.9rem;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 9999;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.4); border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="badge">✦ Smart Learning Platform</div>
+  <h1>Question Bank System</h1>
+  <p>Create, manage & generate papers effortlessly</p>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn-load" onclick="loadQuestions()">📋 Load Questions</button>
+  <div class="gen-wrapper">
+    <button class="btn-gen" onclick="toggleGenDropdown(event)">🎯 Generate Paper ▾</button>
+    <div class="gen-dropdown" id="genDropdown">
+      <button onclick="generate('all')">📄 All Mixed</button>
+      <hr/>
+      <button onclick="generate('easy')">🟢 Easy Only</button>
+      <button onclick="generate('medium')">🟡 Medium Only</button>
+      <button onclick="generate('hard')">🔴 Hard Only</button>
+      <hr/>
+      <button onclick="generateByField('subject')">📚 By Subject</button>
+      <button onclick="generateByField('unit')">📖 By Unit</button>
+      <button onclick="generateByField('faculty')">👨‍🏫 By Faculty</button>
+    </div>
+  </div>
+  <button class="btn-add"  onclick="toggleForm()">➕ Add Question</button>
+</div>
+
+<!-- ADD FORM -->
+<div class="form-panel" id="formContainer">
+  <h2>✦ Add New Question</h2>
+  <div class="form-grid">
+    <input class="full" id="qTitle"  placeholder="Question title…"/>
+    <input id="opt1"    placeholder="Option A"/>
+    <input id="opt2"    placeholder="Option B"/>
+    <input id="opt3"    placeholder="Option C"/>
+    <input id="opt4"    placeholder="Option D"/>
+    <input id="answer"  placeholder="Correct answer"/>
+    <select id="difficulty">
+      <option value="easy">🟢 Easy</option>
+      <option value="medium">🟡 Medium</option>
+      <option value="hard">🔴 Hard</option>
+    </select>
+    <input id="subject"  placeholder="Subject (e.g. Maths)"/>
+    <input id="unit"     placeholder="Unit (e.g. Unit 1)"/>
+    <input class="full" id="faculty" placeholder="Faculty (e.g. Dr. Smith)"/>
+  </div>
+  <div class="form-actions">
+    <button class="btn-save" onclick="addQuestion()">💾 Save Question</button>
+    <button class="btn-cancel" onclick="toggleForm()">✕ Cancel</button>
+  </div>
+</div>
+
+<!-- EDIT FORM -->
+<div class="form-panel" id="editBox">
+  <h2>✦ Edit Question</h2>
+  <input type="hidden" id="editId"/>
+  <div class="form-grid">
+    <input class="full" id="editTitle" placeholder="Question title…"/>
+    <input id="editOpt1" placeholder="Option A"/>
+    <input id="editOpt2" placeholder="Option B"/>
+    <input id="editOpt3" placeholder="Option C"/>
+    <input id="editOpt4" placeholder="Option D"/>
+    <input id="editAnswer" placeholder="Correct answer"/>
+    <select id="editDifficulty">
+      <option value="easy">🟢 Easy</option>
+      <option value="medium">🟡 Medium</option>
+      <option value="hard">🔴 Hard</option>
+    </select>
+    <input id="editSubject"  placeholder="Subject"/>
+    <input id="editUnit"     placeholder="Unit"/>
+    <input class="full" id="editFaculty" placeholder="Faculty"/>
+  </div>
+  <div class="form-actions">
+    <button class="btn-save" onclick="updateQuestion()">✔ Update</button>
+    <button class="btn-cancel" onclick="closeEdit()">✕ Cancel</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="statsBar"></div>
+
+<!-- EMPTY STATE -->
+<div id="emptyState">
+  <div class="icon">📭</div>
+  <h2>No questions yet</h2>
+  <p>Click "Load Questions" or add your first question!</p>
+</div>
+
+<!-- GRID -->
+<div id="output"></div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+  /* ── TOAST ── */
+  function toast(msg, emoji = '✅') {
+    const t = document.getElementById('toast');
+    t.innerHTML = `<span>${emoji}</span><span>${msg}</span>`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ── TOGGLE ADD FORM ── */
+  function toggleForm() {
+    const f = document.getElementById('formContainer');
+    f.style.display = f.style.display === 'block' ? 'none' : 'block';
+    if (f.style.display === 'block') {
+      document.getElementById('editBox').style.display = 'none';
+    }
+  }
+
+  /* ── ADD ── */
+  function addQuestion() {
+    const data = {
+      questionTitle: qTitle.value,
+      option1: opt1.value,
+      option2: opt2.value,
+      option3: opt3.value,
+      option4: opt4.value,
+      correctAnswer: answer.value,
+      difficulty: difficulty.value,
+      subject: subject.value,
+      unit: unit.value,
+      faculty: faculty.value
+    };
+    fetch('http://localhost:8080/questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(() => {
+      toast('Question added successfully!');
+      toggleForm();
+      loadQuestions();
+      [qTitle,opt1,opt2,opt3,opt4,answer,subject,unit,faculty].forEach(el => el.value = '');
+    });
+  }
+
+  /* ── LOAD ── */
+  function loadQuestions() {
+    fetch('http://localhost:8080/questions')
+      .then(r => r.json())
+      .then(d => display(d));
+  }
+
+  /* ── GENERATE DROPDOWN TOGGLE ── */
+  function toggleGenDropdown(e) {
+    e.stopPropagation();
+    document.getElementById('genDropdown').classList.toggle('open');
+  }
+  document.addEventListener('click', () => {
+    document.getElementById('genDropdown').classList.remove('open');
+  });
+
+  /* ── GENERATE ── */
+  function generate(filter) {
+    document.getElementById('genDropdown').classList.remove('open');
+    // For difficulty filter, fetch all questions; for mixed use /generate endpoint
+    const url = 'http://localhost:8080/questions';
+    fetch(url)
+      .then(r => {
+        if (!r.ok) throw new Error('Server error: ' + r.status);
+        return r.json();
+      })
+      .then(d => {
+        if (!d || d.length === 0) {
+          toast('Add questions first before generating!', '⚠️');
+          return;
+        }
+        if (filter !== 'all') {
+          d = d.filter(q => q.difficulty && q.difficulty.toLowerCase() === filter);
+        }
+        if (d.length === 0) {
+          toast('No ' + filter + ' questions found!', '⚠️');
+          return;
+        }
+        // Shuffle
+        for (let i = d.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [d[i], d[j]] = [d[j], d[i]];
+        }
+        display(d);
+        toast(filter === 'all' ? 'Mixed paper generated!' : filter.charAt(0).toUpperCase() + filter.slice(1) + ' paper generated!', '🎯');
+      })
+      .catch(err => {
+        console.error('Generate error:', err);
+        toast('Server not running or no questions added!', '❌');
+      });
+  }
+
+  /* ── DISPLAY ── */
+  function display(data) {
+    const output = document.getElementById('output');
+    const empty  = document.getElementById('emptyState');
+    const stats  = document.getElementById('statsBar');
+
+    if (!data || data.length === 0) {
+      output.innerHTML = '';
+      empty.style.display = 'block';
+      stats.style.display = 'none';
+      return;
+    }
+
+    empty.style.display = 'none';
+    stats.style.display = 'flex';
+
+    // counts
+    const easy   = data.filter(q => q.difficulty === 'easy').length;
+    const medium = data.filter(q => q.difficulty === 'medium').length;
+    const hard   = data.filter(q => q.difficulty === 'hard').length;
+
+    stats.innerHTML = `
+      <div class="stat-chip"><span class="dot" style="background:#4ade80"></span> ${easy} Easy</div>
+      <div class="stat-chip"><span class="dot" style="background:#facc15"></span> ${medium} Medium</div>
+      <div class="stat-chip"><span class="dot" style="background:#ff6bcb"></span> ${hard} Hard</div>
+      <div class="stat-chip" style="border-color:rgba(168,85,247,0.3);color:#a855f7">📄 ${data.length} Total</div>
+    `;
+
+    output.innerHTML = data.map((q, i) => `
+      <div class="card ${q.difficulty}" style="animation-delay:${i * 0.06}s">
+        <span class="diff-badge">${q.difficulty}</span>
+        <h3>${q.questionTitle}</h3>
+        <div class="options-grid">
+          <div class="opt">A. ${q.option1}</div>
+          <div class="opt">B. ${q.option2}</div>
+          <div class="opt">C. ${q.option3}</div>
+          <div class="opt">D. ${q.option4}</div>
+        </div>
+        <div class="answer-row">
+          <span class="answer-label">Answer</span>
+          <span class="answer-val">✓ ${q.correctAnswer}</span>
+        </div>
+        ${q.subject || q.unit || q.faculty ? `
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+          ${q.subject  ? `<span style="font-size:0.75rem;padding:3px 10px;border-radius:8px;background:rgba(34,211,238,0.1);color:var(--cyan);border:1px solid rgba(34,211,238,0.2)">📚 ${q.subject}</span>` : ''}
+          ${q.unit     ? `<span style="font-size:0.75rem;padding:3px 10px;border-radius:8px;background:rgba(250,204,21,0.1);color:var(--yellow);border:1px solid rgba(250,204,21,0.2)">📖 ${q.unit}</span>` : ''}
+          ${q.faculty  ? `<span style="font-size:0.75rem;padding:3px 10px;border-radius:8px;background:rgba(168,85,247,0.1);color:var(--purple);border:1px solid rgba(168,85,247,0.2)">👨‍🏫 ${q.faculty}</span>` : ''}
+        </div>` : ''}
+        <div class="card-actions">
+          <button class="btn-edit" onclick="editQuestion(${q.id})">✏ Edit</button>
+          <button class="btn-delete" onclick="deleteQuestion(${q.id})">🗑 Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* ── DELETE ── */
+  function deleteQuestion(id) {
+    if (!confirm('Delete this question?')) return;
+    fetch(`http://localhost:8080/questions/${id}`, { method: 'DELETE' })
+      .then(() => { toast('Question deleted', '🗑'); loadQuestions(); });
+  }
+
+  /* ── EDIT LOAD ── */
+  function editQuestion(id) {
+    fetch(`http://localhost:8080/questions/${id}`)
+      .then(r => r.json())
+      .then(q => {
+        document.getElementById('formContainer').style.display = 'none';
+        const box = document.getElementById('editBox');
+        box.style.display = 'block';
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        editId.value = q.id;
+        editTitle.value = q.questionTitle;
+        editOpt1.value  = q.option1;
+        editOpt2.value  = q.option2;
+        editOpt3.value  = q.option3;
+        editOpt4.value  = q.option4;
+        editAnswer.value = q.correctAnswer;
+        editDifficulty.value = q.difficulty;
+        editSubject.value  = q.subject  || '';
+        editUnit.value     = q.unit     || '';
+        editFaculty.value  = q.faculty  || '';
+      });
+  }
+
+  /* ── UPDATE ── */
+  function updateQuestion() {
+    const id   = editId.value;
+    const data = {
+      questionTitle: editTitle.value,
+      option1: editOpt1.value,
+      option2: editOpt2.value,
+      option3: editOpt3.value,
+      option4: editOpt4.value,
+      correctAnswer: editAnswer.value,
+      difficulty: editDifficulty.value,
+      subject: editSubject.value,
+      unit: editUnit.value,
+      faculty: editFaculty.value
+    };
+    fetch(`http://localhost:8080/questions/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(() => {
+      toast('Question updated!', '✏');
+      document.getElementById('editBox').style.display = 'none';
+      loadQuestions();
+    });
+  }
+
+  /* ── GENERATE BY FIELD (subject/unit/faculty) ── */
+  function generateByField(field) {
+    document.getElementById('genDropdown').classList.remove('open');
+    const value = prompt('Enter ' + field + ' name:');
+    if (!value) return;
+    fetch(`http://localhost:8080/questions/${field}/${encodeURIComponent(value)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d || d.length === 0) {
+          toast('No questions found for ' + field + ': ' + value, '⚠️');
+          return;
+        }
+        for (let i = d.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [d[i], d[j]] = [d[j], d[i]];
+        }
+        display(d);
+        toast(field.charAt(0).toUpperCase() + field.slice(1) + ' paper generated!', '🎯');
+      })
+      .catch(() => toast('Error fetching questions!', '❌'));
+  }
+
+  /* ── CLOSE EDIT ── */
+  function closeEdit() {
+    document.getElementById('editBox').style.display = 'none';
+  }
+</script>
+</body>
+</html>
